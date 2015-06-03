@@ -1,0 +1,1 @@
+系统数据来源于文件“药品信息.txt”，该文件存放的正确路径为：glassfish安装目录下的glassfish/domains/domain1/config文件夹下，例如：D:\Program Files\glassfish-4.1\glassfish\domains\domain1\config\药品信息.txt

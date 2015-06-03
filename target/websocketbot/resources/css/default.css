@@ -1,0 +1,64 @@
+/**
+ * Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+ *
+ * You may not modify, use, reproduce, or distribute this software except in
+ * compliance with  the terms of the License at:
+ * http://java.net/projects/javaeetutorial/pages/BerkeleyLicense
+ */
+body {
+    //background-color: #ffffff;
+    //background-image: url(/src/main/webapp/resources/image/543835_090146018966_2.jpg);
+    background-image: url(../image/0631.jpg);
+    //background-image: url(../image/bottom.jpg);
+    background-repeat:repeat;
+    font-size: 12px;
+    font-family: Verdana, "Verdana CE",  Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif;
+    font-weight: bold;
+    //color: #000000;  
+    //color:yellow;
+    margin: 10px;
+}
+
+textArea{
+    font-size: 18px;
+    font-family:serif;
+    font-weight:bold;
+    color:darkorange;
+}
+
+.series{
+    //background-color:lime;
+    background-color:bisque;
+    //background-color:#010135;
+    //color:bisque;
+}
+
+.clear{
+    clear:both;
+}
+
+h1 {
+    font-family: Arial, "Arial CE", "Lucida Grande CE", lucida, "Helvetica CE", sans-serif;
+    //border-bottom: 1px solid #AFAFAF; 
+    text-align: center;
+    font-size:  32px;
+    font-weight: bold;
+    margin: 0px;
+    padding: 0px;
+    color:red;
+}
+
+a:link, a:visited {
+  color: #045491;
+  font-weight : bold;
+  text-decoration: none;
+}
+
+a:link:hover, a:visited:hover  {
+  color: #045491;
+  font-weight : bold;
+  text-decoration : underline;
+}
+
+
+

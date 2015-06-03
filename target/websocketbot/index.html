@@ -1,0 +1,263 @@
+<!--
+
+    Copyright (c) 2014 Oracle and/or its affiliates. All rights reserved.
+
+    You may not modify, use, reproduce, or distribute this software except in
+    compliance with  the terms of the License at:
+    http://java.net/projects/javaeetutorial/pages/BerkeleyLicense
+
+-->
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>WebsocketBot</title>
+        <link rel="stylesheet" type="text/css" href="resources/css/default.css" />
+        <script type="text/javascript">
+            var wsocket;    // Websocket connection
+            var userName;   // User's name
+            var textarea;   // Chat area
+            var wsconsole;  // Websocket console area
+            var userlist;   // User list area
+            /* Connect to the Websocket endpoint
+             * Set a callback for incoming messages */
+            function connect() {
+                textarea = document.getElementById("textarea");
+                wsconsole = document.getElementById("wsconsole");
+                userlist = document.getElementById("userlist");
+                wsocket = new WebSocket("ws://localhost:8080/websocketbot/websocketbot");
+                wsocket.onmessage = onMessage;
+                document.getElementById("name").focus();
+                document.getElementById("consolediv").style.visibility = 'hidden';
+            }
+            /* Callback function for incoming messages
+             * evt.data contains the message
+             * Update the chat area, user's area and Websocket console */
+            function onMessage(evt) {
+                var logo = new Array();
+                logo[0] = "resources/image/logo/logo1.jpg";
+                logo[1] = "resources/image/logo/logo2.jpg";
+                logo[2] = "resources/image/logo/logo3.jpg";
+                logo[3] = "resources/image/logo/logo4.jpg";
+                logo[4] = "resources/image/logo/logo5.jpg";
+                logo[5] = "resources/image/logo/logo6.jpg";
+                var line = "";
+                /* Parse the message into a JavaScript object */
+                var msg = JSON.parse(evt.data);
+                if (msg.type === "chat") {
+                    line = msg.name + ": ";
+                    if (msg.target.length > 0)
+                        line += "@" + msg.target + " ";
+                    line += msg.message + "\n";
+                    /* Update the chat area */
+                    textarea.value += "" + line;
+                } else if (msg.type === "info") {
+                    line = "[--" + msg.info + "--]\n";
+                    /* Update the chat area */
+                    textarea.value += "" + line;
+                } else if (msg.type === "users") {
+                    var ul = document.getElementById("userlist");
+                    var childlist = ul.childNodes;
+//                    var k = 2;
+                    while (ul.hasChildNodes())
+                    {
+                        ul.removeChild(childlist[k++]);
+                    }
+                    //line = "Users:\n";
+                    line = "Users:\n";
+                    for (var i = 0; i < msg.userlist.length; i++)//用户列表中动态添加头像
+                    {
+                        //line += "---"+msg.userlist[i]+"---\n";
+                        //if(childlist[i])
+                        //    ul.removeChild(childlist[i]);
+                        line = msg.userlist[i];
+                        var li = document.createElement("li");
+                        var img = document.createElement("img");
+                        img.setAttribute("alt", "头像");
+                        img.setAttribute("src", logo[Math.floor(Math.random() * 5)]);//随机分头像
+                        //img.setAttribute("src", logo[i % 6]);
+                        img.setAttribute("width", "150");
+                        img.setAttribute("height", "150");
+                        img.setAttribute("id", i);
+                        li.appendChild(img);
+                        var lab = document.createElement("label");
+                        lab.innerHTML = line;
+                        li.appendChild(lab);
+                        //childlist[i] = li;
+                        ul.appendChild(li);
+                        //ul.firstChild = li;
+                    }
+                    /* Update the user list area */
+                    //userlist.value = line;
+
+                }
+                textarea.scrollTop = 999999;
+                /* Update the Websocket console area */
+                wsconsole.value += "-> " + evt.data + "\n";
+                wsconsole.scrollTop = 999999;
+            }
+            /* Send a join message to the server */
+            function sendJoin() {
+                var input = document.getElementById("input");
+                var name = document.getElementById("name");
+                var join = document.getElementById("join");
+                var jsonstr;
+                if (name.value.length > 0) {
+                    /* Create a message as a JavaScript object */
+                    var joinMsg = {};
+                    joinMsg.type = "join";
+                    joinMsg.name = name.value;
+                    /* Convert the message to JSON */
+                    jsonstr = JSON.stringify(joinMsg);
+                    /* Send the JSON text */
+                    wsocket.send(jsonstr);
+                    /* Disable join controls */
+                    name.disabled = true;
+                    join.disabled = true;
+                    input.disabled = false;
+                    document.getElementById("hint").innerHTML = "&nbsp;您已成功登录系统！欢迎使用药品信息自助查询系统！";
+                    document.getElementById("hint").setAttribute("style", "color:black");
+                    document.getElementById("input_hint").innerHTML = "&nbsp;可以在此输入信息！";
+                    document.getElementById("input_hint").setAttribute("style", "color:black");
+                    document.getElementById("timeShow").hidden = false;
+                    userName = name.value;
+                    /* Update the Websocket console area */
+                    wsconsole.value += "<- " + jsonstr + "\n";
+                    wsconsole.scrollTop = 999999;
+                }
+            }
+            /* Send a chat message to the server (press ENTER on the input area) */
+            function sendMessage(evt) {
+                var input = document.getElementById("input");
+                var jsonstr;
+                var msgstr;
+                if (evt.keyCode === 13 && input.value.length > 0) {
+                    /* Create a chat message as a JavaScript object */
+                    var chatMsg = {};
+                    chatMsg.type = "chat";
+                    chatMsg.name = userName;
+                    msgstr = input.value;
+                    chatMsg.target = getTarget(msgstr.replace(/,/g, ""));
+                    chatMsg.message = cleanTarget(msgstr);
+                    chatMsg.message = chatMsg.message.replace(/(\r\n|\n|\r)/gm, "");
+                    /* Convert the object to JSON */
+                    jsonstr = JSON.stringify(chatMsg);
+                    /* Send the message as JSON text */
+                    wsocket.send(jsonstr);
+                    input.value = "";
+                    /* Update the Websocket console area */
+                    wsconsole.value += "<- " + jsonstr + "\n";
+                    wsconsole.scrollTop = 999999;
+                }
+            }
+            /* Send a join message if the user presses ENTER in the name area */
+            function checkJoin(evt) {
+                var name = document.getElementById("name");
+                var input = document.getElementById("input");
+                if (evt.keyCode === 13 && name.value.length > 0) {
+                    sendJoin();
+                    input.focus();
+                }
+            }
+            /* Get the @User (target) for a message */
+            function getTarget(str) {
+                var arr = str.split(" ");
+                var target = "";
+                for (var i = 0; i < arr.length; i++) {
+                    if (arr[i].charAt(0) === '@') {
+                        target = arr[i].substring(1, arr[i].length);
+                        target = target.replace(/(\r\n|\n|\r)/gm, "");
+                    }
+                }
+                if (target === "")
+                {
+                    target = "Duke";
+                }
+                return target;
+            }
+            /* Remove the @User (target) from a message */
+            function cleanTarget(str) {
+                var arr = str.split(" ");
+                var cleanstr = "";
+                for (var i = 0; i < arr.length; i++) {
+                    if (arr[i].charAt(0) !== '@')
+                        cleanstr += arr[i] + " ";
+                }
+                return cleanstr.substring(0, cleanstr.length - 1);
+            }
+            /* Show or hide the WebSocket console */
+            function showHideConsole() {
+                var chkbox = document.getElementById("showhideconsole");
+                var consolediv = document.getElementById("consolediv");
+                if (chkbox.checked)
+                    consolediv.style.visibility = 'visible';
+                else
+                    consolediv.style.visibility = 'hidden';
+            }
+            /* Call connect() when the page first loads */
+            window.addEventListener("load", connect, false);
+        </script>
+        <script type="text/javascript">
+            var t = null;
+            t = setTimeout(time, 1000);//开始执行
+            function time()
+            {
+                clearTimeout(t);//清除定时器
+                dt = new Date();
+                var h = dt.getHours();
+                var hh = h<10?"0"+h:h;
+                var m = dt.getMinutes();
+                var mm = m<10?"0"+m:m;
+                var s = dt.getSeconds();
+                var ss = s<10?"0"+s:s;
+                document.getElementById("timeShow").innerHTML = "当前系统时间为：" + hh + "时" + mm + "分" + ss + "秒";
+                t = setTimeout(time, 1000); //设定定时器，循环执行             
+            }
+        </script>
+    </head>
+    <body onload="time()">
+        <!--    <h1>药品信息自助查询系统</h1>-->
+        <div style="text-align: center">
+            <img src="resources/image/10495971.gif" alt="top" />
+        </div>
+        <div>
+            <fieldset>
+                <legend>用户登录及输入</legend>
+                用户名：<input class="series" id="name" type="text" size="78" maxlength="20" onkeyup="checkJoin(event);"/> 
+                <span id="hint" style="color: red">&nbsp;请先输入用户名登录，然后可在下列输入框中输入信息与系统进行交互!</span>
+                <input type="submit" id="join" value="登录系统" onclick="sendJoin();" hidden/><br/>
+                <!-- <label>请输入信息</label>-->
+                <!--<textarea style="resize:none" id="input" rows="1" disabled
+                      onkeyup="sendMessage(event);"></textarea><br/>-->
+                请输入：<input class="series" id="input" size="78" disabled onkeyup="sendMessage(event);"/>
+                <span id="input_hint" style="color: red">&nbsp;登录后才可在此输入，当前状态：未登录!</span>
+                <label id="timeShow" hidden></label>
+            </fieldset>
+        </div>
+        <div>
+            <div style="float:left;width: 80%;">
+                <fieldset>
+                    <legend>对话框</legend>
+                    <textarea class="series" id="textarea" cols="113" rows="20" readonly style="resize:none"></textarea>
+                </fieldset>
+            </div>
+            <div style="float: left;width:20%">
+                <fieldset>
+                    <legend>当前用户列表</legend>
+                    <!--                    <textarea class="series" style="resize:none" id="userlist" cols="37" rows="20" readonly></textarea>-->
+                    <div class="series"  id="userlist" style="height: 428px"></div>
+                </fieldset>
+            </div>
+        </div>
+        <div class="clear"></div>
+        <div>
+            <input id="showhideconsole" type="checkbox" onclick="showHideConsole();"/>
+            Show WebSocket console<br/>
+            <div id="consolediv"><textarea class="series" id="wsconsole" cols="260" rows="12" readonly
+                                           style="font-size: 10px;resize:none"></textarea></div>
+        </div>
+        <!--<div id="bottom"><img style="text-align: center" alt="can't load image" src="resources/image/bottom.jpg"/></div>-->
+        <div style="text-align:center;color: black">Copyright(C) 2013-2016, College of Software. Nankai University, All Rights Reserved 
+        </div>
+    </body>
+</html>
